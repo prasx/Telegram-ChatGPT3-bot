@@ -10,7 +10,7 @@ pip install -r install.txt
 3. Add you OpenAI key
 
 ```
-openai.api_key = "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"
+openai.api_key = " You API key"
 ```
 
 4. Fill your dataset with your answers in `dataset.txt`
@@ -20,16 +20,8 @@ openai tools fine_tunes.prepare_data -f dataset.jsonl -q
 ```
 6. Fine-tune your model and get unique model name
 ```
-openai api fine_tunes.create -t dataset.jsonl -m davinci --suffix "<YOUR_MODEL_NAME>"
+openai api fine_tunes.create -t dataset.jsonl -m davinci --suffix "Model name"
 ```
 7. Create Telegram bot using BotFather
-8. Update tg_bot.py with your bot token, OpenAI Token and model name.
+8. Update bot.py with your bot token, OpenAI Token and model name.
 9. Run!
-For english version:
-```
-python tg_bot_eng.py
-```
-For russian version:
-```
-python tg_bot_rus.py
-```
