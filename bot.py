@@ -14,8 +14,8 @@ logging.critical("A message of CRITICAL severity")
 
 
 # API доступы
-openai.api_key = "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"
-bot = telebot.TeleBot("5814351163:AAHYjJeeFDiDiJFook7MdIVvTwjZvNp_nAc")
+openai.api_key = "< YOU API KEY >"
+bot = telebot.TeleBot("< YOU API KEY >")
 stop_symbols = "###"
 model = "text-davinci-003"
 users = {}
@@ -41,8 +41,8 @@ def send_welcome(message):
 def _process_rq(user_id, rq):
     user = _get_user(user_id)
     last_text = user['last_text']
-    # Eсли время последней подсказки > 600 сек удалить контекст
-    if time.time() - user['last_prompt_time'] > 600:
+    # Eсли время последней подсказки > 6000 сек удалить контекст
+    if time.time() - user['last_prompt_time'] > 6000:
         last_text = ''
         user['last_prompt_time'] = 0
         user['last_text'] = ''
@@ -55,7 +55,7 @@ def _process_rq(user_id, rq):
         print("Sending to OpenAI: " + prompt)
         try:
             completion = openai.Completion.create(
-                engine=model, prompt=prompt, max_tokens=375, stop=[stop_symbols], temperature=0.8)
+                engine=model, prompt=prompt, max_tokens=512, stop=[stop_symbols], temperature=0.7)
             eng_ans = completion['choices'][0]['text'].strip()
             if "->" in eng_ans:
                 eng_ans = eng_ans.split("->")[0].strip()
