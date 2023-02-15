@@ -2,23 +2,16 @@ import openai
 import telebot
 import time
 import logging
-import pandas
 
 # Включаем логирование, чтобы не пропустить важные сообщения
-logging.basicConfig(level=logging.INFO, filename="py_log.log",filemode="w")
-logging.debug("A DEBUG Message")
-logging.info("An INFO")
-logging.warning("A WARNING")
-logging.error("An ERROR")
-logging.critical("A message of CRITICAL severity")
-
-
+logging.basicConfig(level=logging.INFO, filename="py_log.log", filemode="w")
 # API доступы
 openai.api_key = "< YOU API KEY >"
 bot = telebot.TeleBot("< YOU API KEY >")
+
+users = {}
 stop_symbols = "###"
 model = "text-davinci-003"
-users = {}
 
 
 def _get_user(id):
@@ -26,23 +19,11 @@ def _get_user(id):
     users[id] = user
     return user
 
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    user = _get_user(message.from_user.id)
-    user['last_prompt_time'] = 0
-    user['last_text'] = ''
-    bot.reply_to(message, f"Отлично, нейроны завели! "
-                          f"\nИстория сообщения: очищена 🦧"
-                          f"\nВыбранная языковая модель: {model}"
-                          f"\n\nНу а теперь можно и поговорить! 🤖")
-
-
-
 def _process_rq(user_id, rq):
     user = _get_user(user_id)
     last_text = user['last_text']
-    # Eсли время последней подсказки > 6000 сек удалить контекст
-    if time.time() - user['last_prompt_time'] > 6000:
+    # Eсли время последней подсказки > 600 сек удалить контекст
+    if time.time() - user['last_prompt_time'] > 600:
         last_text = ''
         user['last_prompt_time'] = 0
         user['last_text'] = ''
@@ -50,27 +31,33 @@ def _process_rq(user_id, rq):
     if rq and len(rq) > 0 and len(rq) < 1000:
         print(f">>> ({user_id}) {rq}")
 
-        # Удаляем все что полсе 700 символов
-        prompt = f"{last_text}Q: {rq} ->"[-700:]
-        print("Sending to OpenAI: " + prompt)
-        try:
-            completion = openai.Completion.create(
-                engine=model, prompt=prompt, max_tokens=512, stop=[stop_symbols], temperature=0.7)
-            eng_ans = completion['choices'][0]['text'].strip()
-            if "->" in eng_ans:
-                eng_ans = eng_ans.split("->")[0].strip()
-            ans = eng_ans
-            print(f"<<< ({user_id}) {ans}")
-            user['last_text'] = prompt + " " + eng_ans + stop_symbols
-            user['last_prompt_time'] = time.time()
-            return ans
-        except:
-            return "Ошибочка вышла!!"
+       # Удаляем все что полсе 2000 символов
+        prompt = f" {last_text} {rq} -> "[-2000:]
+        print("Sending:" + prompt) 
+        completion = openai.Completion.create(
+            engine=model, prompt=prompt, max_tokens=512, stop=[stop_symbols], temperature=0.8)
+        eng_ans = completion['choices'][0]['text'].strip()
+        if "->" in eng_ans:
+            eng_ans = eng_ans.split("->")[0].strip()
+        ans = eng_ans
+        print(f"<<< ({user_id}) {ans}") 
+        user['last_text'] = prompt + " " + eng_ans + stop_symbols
+        user['last_prompt_time'] = time.time()
+        return ans
     else:
         user['last_prompt_time'] = 0
         user['last_text'] = ''
-        return "Ошибочка вышла!!"
+        return "Ошибка."
 
+
+@bot.message_handler(commands=['start', 'help'])
+def send_welcome(message):
+    user = _get_user(message.from_user.id)
+    user['last_prompt_time'] = 0
+    user['last_text'] = ''
+    bot.reply_to(message, f"\nПривет,  {message.from_user.first_name}!"
+                          f"\nИстория сообщения: очищена 🦧"
+                          f"\nВыбранная языковая модель: {model}")
 
 @bot.message_handler(func=lambda message: True)
 def echo_all(message):
@@ -78,7 +65,6 @@ def echo_all(message):
     rq = message.text
     ans = _process_rq(user_id, rq)
     bot.send_message(message.chat.id, ans)
-
 
 
 
